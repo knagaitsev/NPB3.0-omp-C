@@ -57,6 +57,7 @@ veryclean: clean
 	- rm bin/sp.* bin/lu.* bin/mg.* bin/ft.* bin/bt.* bin/is.* bin/ep.* bin/cg.*
 
 header:
+	@ mkdir -p bin
 	@ $(SHELL) sys/print_header
 
 kit: 
