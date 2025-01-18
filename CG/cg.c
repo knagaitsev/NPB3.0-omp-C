@@ -44,6 +44,11 @@ c  be used without penalty.
 c---------------------------------------------------------------------
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+
 #include "npb-C.h"
 #include "npbparams.h"
 
@@ -207,6 +212,8 @@ c-------------------------------------------------------------------*/
 c  The call to the conjugate gradient routine:
 c-------------------------------------------------------------------*/
 	conj_grad (colidx, rowstr, x, z, a, p, q, r,/* w,*/ &rnorm);
+    
+    return 0;
 
 /*--------------------------------------------------------------------
 c  zeta = shift + 1/(x.z)
@@ -342,6 +349,35 @@ c-------------------------------------------------------------------*/
 		    CS1, CS2, CS3, CS4, CS5, CS6, CS7);
 }
 
+bool write_binary_int(const char* filename, int64_t* data, uint64_t size) {
+  FILE* fp;
+  if ((fp = fopen(filename, "wb")) == NULL) {
+    fprintf(stderr, "Unable to open binary file %s for write.\n", filename);
+    return false;
+  }
+
+  printf("Writing binary int size: %lu\n", size);
+
+  fwrite(data, sizeof(int64_t), size, fp);
+
+  fclose(fp);
+  return true;
+}
+
+
+bool write_binary_double(const char* filename, double* data, uint64_t size) {
+  FILE* fp;
+  if ((fp = fopen(filename, "wb")) == NULL) {
+    fprintf(stderr, "Unable to open binary file %s for write.\n", filename);
+    return false;
+  }
+
+  fwrite(data, sizeof(double), size, fp);
+
+  fclose(fp);
+  return true;
+}
+
 /*--------------------------------------------------------------------
 c-------------------------------------------------------------------*/
 static void conj_grad (
@@ -398,7 +434,7 @@ c---->
 c  The conj grad iteration loop
 c---->
 c-------------------------------------------------------------------*/
-    for (cgit = 1; cgit <= cgitmax; cgit++) {
+    for (cgit = 1; cgit <= 1; cgit++) {
       rho0 = rho;
       d = 0.0;
       rho = 0.0;
@@ -418,16 +454,46 @@ C        The unrolled-by-8 version below is significantly faster
 C        on the Cray t3d - overall speed of code is 1.5 times faster.
 */
 
+    int len = rowstr[lastrow-firstrow+2];
+    printf("LEN: %d\n", len);
+
+    int64_t *rows = malloc(len * sizeof(int64_t));
+    int64_t *cols = malloc(len * sizeof(int64_t));
+    double *vals = malloc(len * sizeof(double));
+
+    int i = 0;
+
 /* rolled version */    
 #pragma omp for 
 	for (j = 1; j <= lastrow-firstrow+1; j++) {
             sum = 0.0;
+            if (rowstr[j] != rowstr[j+1]) {
+                // printf("SOMETHING IN ROW: %d, %d\n", rowstr[j], rowstr[j+1]);
+            } else {
+                printf("NOTHING IN ROW\n");
+            }
+
 	    for (k = rowstr[j]; k < rowstr[j+1]; k++) {
-		sum = sum + a[k]*p[colidx[k]];
+            // j - row
+            // colidx[k] - col
+            // value - a[k]
+
+            // printf("k: %d\n", k);
+            rows[i] = j - 1;
+            cols[i] = colidx[k] - 1;
+            vals[i] = a[k];
+            i++;
+
+		    sum = sum + a[k]*p[colidx[k]];
 	    }
             //w[j] = sum;
             q[j] = sum;
 	}
+
+    write_binary_int("rows.bin", rows, len);
+    write_binary_int("cols.bin", cols, len);
+    write_binary_double("vals.bin", vals, len);
+
 	
 /* unrolled-by-two version
 #pragma omp for private(i,k)
