@@ -90,7 +90,7 @@ static double tran;
 static void conj_grad (int colidx[], int rowstr[], double x[], double z[],
 		       double a[], double p[], double q[], double r[],
 		       //double w[],
-		       double *rnorm);
+		       double *rnorm, char class);
 static void makea(int n, int nz, double a[], int colidx[], int rowstr[],
 		  int nonzer, int firstrow, int lastrow, int firstcol,
 		  int lastcol, double rcond, int arow[], int acol[],
@@ -211,7 +211,7 @@ c-------------------------------------------------------------------*/
 /*--------------------------------------------------------------------
 c  The call to the conjugate gradient routine:
 c-------------------------------------------------------------------*/
-	conj_grad (colidx, rowstr, x, z, a, p, q, r,/* w,*/ &rnorm);
+	conj_grad (colidx, rowstr, x, z, a, p, q, r,/* w,*/ &rnorm, class);
     
     return 0;
 
@@ -264,7 +264,7 @@ c-------------------------------------------------------------------*/
 /*--------------------------------------------------------------------
 c  The call to the conjugate gradient routine:
 c-------------------------------------------------------------------*/
-	conj_grad(colidx, rowstr, x, z, a, p, q, r/*, w*/, &rnorm);
+	conj_grad(colidx, rowstr, x, z, a, p, q, r/*, w*/, &rnorm, class);
 
 /*--------------------------------------------------------------------
 c  zeta = shift + 1/(x.z)
@@ -390,7 +390,8 @@ static void conj_grad (
     double q[],		/* q[*] */
     double r[],		/* r[*] */
     //double w[],		/* w[*] */
-    double *rnorm )
+    double *rnorm,
+    char class)
 /*--------------------------------------------------------------------
 c-------------------------------------------------------------------*/
     
@@ -490,9 +491,18 @@ C        on the Cray t3d - overall speed of code is 1.5 times faster.
             q[j] = sum;
 	}
 
-    write_binary_int("rows.bin", rows, len);
-    write_binary_int("cols.bin", cols, len);
-    write_binary_double("vals.bin", vals, len);
+    char rows_buf[100];
+    sprintf(rows_buf, "CG_%c_rows.bin", class);
+
+    char cols_buf[100];
+    sprintf(cols_buf, "CG_%c_cols.bin", class);
+
+    char vals_buf[100];
+    sprintf(vals_buf, "CG_%c_vals.bin", class);
+
+    write_binary_int(rows_buf, rows, len);
+    write_binary_int(cols_buf, cols, len);
+    write_binary_double(vals_buf, vals, len);
 
 	
 /* unrolled-by-two version
