@@ -139,14 +139,13 @@ c-------------------------------------------------------------------*/
 	timer_clear(i);
     }
 
-    timer_start(T_TOTAL);
-    if (TIMERS_ENABLED == TRUE) timer_start(T_SETUP);
-
     compute_indexmap(indexmap, dims[2]);
 
     compute_initial_conditions(u1, dims[0]);    
     fft_init (dims[0][0]);
 
+	timer_start(T_TOTAL);
+    if (TIMERS_ENABLED == TRUE) timer_start(T_SETUP);
 
     if (TIMERS_ENABLED == TRUE) {
       timer_stop(T_SETUP);
